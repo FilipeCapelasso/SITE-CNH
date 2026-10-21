@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d0d12">
+<title>Pré-contrato CNH</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--r:#c80000;--g:#25ae88;--bd:#e6e6e6;--tx:#2b2b33;--mu:#8b8b96;--ink:#0d0d12;--paper:#f3f3f6}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--tx);background:var(--paper);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Sora,Inter,sans-serif;letter-spacing:-.02em;margin:0}
+a{color:inherit}:focus-visible{outline:3px solid #c8000066;outline-offset:2px}
+small{color:var(--mu)}
+#pg{position:fixed;top:0;left:0;height:4px;width:0;z-index:50;background:linear-gradient(90deg,#ff3b30,#c80000);box-shadow:0 0 14px #ff3b30aa;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+/* topo */
+.hero{position:relative;overflow:hidden;color:#fff;text-align:center;padding:56px 20px 130px;background:radial-gradient(900px 420px at 85% -10%,#c8000066,transparent 60%),linear-gradient(160deg,#17171e,#09090d 70%)}
+.glow{position:absolute;width:520px;height:520px;left:-160px;bottom:-300px;background:#c80000;filter:blur(140px);opacity:.35;animation:breathe 7s ease-in-out infinite}
+.spd{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.spd i{position:absolute;height:2px;width:36vw;left:-40vw;opacity:0;background:linear-gradient(90deg,transparent,#ff3b30,transparent);transform:skewX(-30deg);animation:dash 5.5s cubic-bezier(.4,0,.2,1) infinite}
+.spd i:nth-child(1){top:22%}.spd i:nth-child(2){top:48%;animation-delay:1.4s;width:26vw}.spd i:nth-child(3){top:70%;animation-delay:2.8s}.spd i:nth-child(4){top:86%;animation-delay:4s;width:20vw}
+@keyframes dash{0%{left:-40vw;opacity:0}15%{opacity:.8}60%{opacity:.5}100%{left:110vw;opacity:0}}
+@keyframes breathe{50%{opacity:.5;transform:scale(1.15)}}
+@keyframes up{from{opacity:0;transform:translateY(26px)}}
+@keyframes pop{from{opacity:0;transform:translateY(40px) scale(.97)}}
+.who{position:relative;animation:up .8s cubic-bezier(.2,.8,.2,1) both}
+.ava{width:112px;height:112px;border-radius:50%;object-fit:cover;display:grid;place-items:center;margin:0 auto 16px;font:800 42px Sora,sans-serif;color:#fff;background:var(--r);border:3px solid #ffffff33;box-shadow:0 0 0 7px #ffffff10,0 20px 50px #0008}
+.who h1{font-size:clamp(30px,4vw,46px);font-weight:800;display:flex;justify-content:center;align-items:center;gap:10px}.vf{width:.5em;height:.5em}
+.who h2{margin-top:22px;font-size:clamp(22px,3vw,34px);font-weight:800}
+.who p{margin:10px auto 0;max-width:480px;color:#ffffffb8;line-height:1.5}
+/* formulário */
+.box{position:relative;max-width:1000px;margin:-72px auto 0;padding:34px;background:#fff;border-radius:28px;box-shadow:0 30px 80px -30px #0006;animation:pop .9s .15s cubic-bezier(.2,.8,.2,1) both}
+.sec{animation:up .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*.09s + .35s)}
+.st{display:flex;align-items:center;gap:10px;margin:32px 0 14px;font:700 15px Sora,sans-serif}.st::before{content:"";width:5px;height:18px;border-radius:4px;background:var(--r)}.sec:first-child .st{margin-top:0}
+.gr{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}.s4{grid-column:span 4}.s6{grid-column:span 6}.s8{grid-column:span 8}
+.fl{position:relative}
+.fl input,.fl select{width:100%;height:58px;margin:0;padding:24px 16px 8px;border:1px solid var(--bd);border-radius:14px;background:#fff;font:500 15px Inter,sans-serif;color:var(--tx);transition:border-color .2s,box-shadow .2s}
+.fl label{position:absolute;left:17px;top:19px;font:500 15px Inter,sans-serif;color:var(--mu);pointer-events:none;transition:all .2s}
+.fl input:focus+label,.fl input:not(:placeholder-shown)+label,.fl.sl label{top:9px;font-size:11.5px;font-weight:600}
+.fl input:focus,.fl select:focus{outline:0;border-color:var(--r);box-shadow:0 0 0 4px #c8000020}
+.fl input:focus+label,.fl select:focus+label{color:var(--r)}
+.fl.er input,.fl.er select{border-color:#e11;box-shadow:0 0 0 4px #ee111118;animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.hp{position:absolute;left:-9999px;opacity:0}
+.ok{display:flex;gap:12px;align-items:flex-start;margin:26px 0 8px;font-size:14px;line-height:1.5;cursor:pointer}.ok input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--r);flex:none}
+.ok a{color:var(--r);font-weight:600}
+.btn{display:block;width:100%;padding:15px;border-radius:14px;border:1px solid var(--bd);background:#fff;font:600 15px Inter,sans-serif;color:var(--tx);text-align:center;text-decoration:none;cursor:pointer;transition:transform .2s,box-shadow .25s,background .2s,color .2s}
+.btn:hover{transform:translateY(-2px)}
+.go{position:relative;overflow:hidden;max-width:380px;margin:18px auto 0;border:0;color:#fff;font:700 16px Inter,sans-serif;background:linear-gradient(135deg,#2bc597,#1f9a76);box-shadow:0 14px 30px -12px #1f9a76}
+.go::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,#ffffff55 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s}.go:hover::after{transform:translateX(120%)}
+.go:disabled{opacity:.7;cursor:wait}
+.cp{max-width:300px;margin:26px auto 0;color:#1d6fe0;border-color:#1d6fe0}.cp:hover{background:#1d6fe0;color:#fff}
+.pv{display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--mu)}.pv:hover{color:var(--r)}
+.hl{display:block;margin-top:22px;border-top:1px solid var(--bd);padding-top:6px}
+/* sucesso */
+.done{text-align:center;padding:30px 10px 10px}.done h2{font-size:28px;margin:18px 0 8px}.done p{color:var(--mu);max-width:420px;margin:0 auto 22px;line-height:1.55}
+.ck{width:96px;height:96px}.ck circle{fill:none;stroke:#25ae88;stroke-width:5;stroke-dasharray:290;stroke-dashoffset:290;animation:dr .8s .1s forwards}.ck path{fill:none;stroke:#25ae88;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:dr .5s .8s forwards}@keyframes dr{to{stroke-dashoffset:0}}
+.done .btn{max-width:340px;margin:10px auto 0}
+.wa{background:linear-gradient(135deg,#2bc597,#1f9a76);color:#fff;border:0}
+/* rodapé e botão flutuante */
+.foot2{margin-top:60px;background:var(--ink);color:#ffffff99;text-align:center;padding:40px 20px 110px;font-size:13px;line-height:1.9}.foot2 b{color:#fff;font:700 17px Sora,sans-serif}.foot2 a{color:#ffffffb3}.foot2 a:hover{color:#fff}
+.bubble{position:fixed;right:14px;bottom:16px;z-index:5;display:flex;gap:10px;align-items:center;padding:8px 18px 8px 8px;border-radius:999px;color:#fff;font-weight:600;text-decoration:none;background:linear-gradient(135deg,#2bc597,#1f9a76);box-shadow:0 12px 30px -8px #1f9a7699;transition:transform .3s;animation:up .8s 1.2s cubic-bezier(.2,.8,.2,1) both}
+.bubble:hover{transform:translateY(-4px) scale(1.03)}.bubble::after{content:"";position:absolute;inset:0;border-radius:inherit;animation:ring 2.6s infinite}
+.bubble .ava{width:44px;height:44px;margin:0;font-size:16px;border-width:2px;box-shadow:none}
+@keyframes ring{0%{box-shadow:0 0 0 0 #25ae8899}70%,100%{box-shadow:0 0 0 18px #25ae8800}}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:12px 20px;border-radius:999px;z-index:60;display:none;animation:up .4s both;text-align:center}
+/* painel do vendedor */
+.ad{max-width:900px;margin:0 auto;padding:22px 18px 60px}.ad h1{font-size:26px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.sm{border:1px solid var(--bd);background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font:600 13px Inter,sans-serif;text-decoration:none;color:var(--tx);width:auto;display:inline-block}.sm:hover{border-color:var(--r);color:var(--r)}
+.chips{display:flex;gap:8px;overflow:auto;padding:4px 0 10px}.chip{flex:none;padding:9px 16px;border-radius:999px;border:1px solid var(--bd);background:#fff;font:600 14px Inter,sans-serif;cursor:pointer;transition:all .25s}.chip:hover{border-color:var(--r);color:var(--r)}.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.ad input.q{width:100%;padding:14px 16px;border:1px solid var(--bd);border-radius:14px;font:15px Inter,sans-serif;margin-bottom:6px}
+details.fc{background:#fff;border:1px solid #0000000d;border-radius:18px;margin-top:12px;box-shadow:0 1px 2px #0001,0 10px 24px -16px #0003}
+details.fc summary{display:flex;gap:12px;align-items:center;padding:14px 16px;cursor:pointer;list-style:none}details.fc summary::-webkit-details-marker{display:none}
+details.fc summary div{flex:1;min-width:0}details.fc summary b{display:block}
+.bd{padding:4px 10px;border-radius:999px;font:700 12px Inter,sans-serif;background:#eee}.bd.novo{background:#fde8e8;color:#b00000}.bd.em_analise{background:#fff3d6;color:#8a5a00}.bd.aprovado{background:#dcf5ea;color:#13734f}.bd.recusado{background:#e9e9ee;color:#555}
+.dt{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px 16px;padding:6px 16px 16px}.dt b{display:block;font-size:14px;word-break:break-word}.dt small{font-size:12px}
+.ac{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 16px}.ac select{padding:9px;border:1px solid var(--bd);border-radius:10px;font:600 13px Inter,sans-serif}
+.lg{max-width:380px;margin:60px auto;padding:0 18px}.lg input{width:100%;padding:15px;border:1px solid var(--bd);border-radius:12px;font:16px Inter,sans-serif;margin-top:10px}
+.lg .btn{margin-top:14px;background:linear-gradient(135deg,#dc1414,#b00000);color:#fff;border:0}
+@media(max-width:640px){.box{padding:22px 16px;border-radius:22px;margin-top:-80px}.gr>*{grid-column:span 12}.s2,.s3{grid-column:span 6!important}.hero{padding:44px 16px 130px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}html{scroll-behavior:auto}}
+.s12{grid-column:span 12}.hid{display:none}.hid.show{display:block;animation:up .5s cubic-bezier(.2,.8,.2,1) both}
+.bd.contrato_enviado{background:#e3eeff;color:#1d4fa8}.bd.assinado{background:#dcf5ea;color:#13734f}
+</style>
+</head>
+<body>
+<div id="pg"></div><div id="app"></div><div id="toast"></div>
+<script>
+/* ===== CONFIGURE AQUI (mesmo projeto Supabase da vitrine) ===== */
+const SUPABASE_URL='https://qrmwgqkiwoenlkfzjazs.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFybXdncWtpd29lbmxrZnpqYXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4MDc3OTIsImV4cCI6MjEwNjM4Mzc5Mn0.lhgkQS_WcB55uG0SKk0ngQgpc9oruFRt2H2D8orjNnc';
+const LGPD_URL='https://vendedor.site/termos/lgpd';
+/* =============================================================== */
+const SU=SUPABASE_URL.trim().replace(/\/(rest|auth)\/v1.*$/,'').replace(/\/+$/,'');
+const DEMO=!(/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SU)&&SUPABASE_KEY.trim().length>30);
+const DEFAULT_SLUG='shayron'; /* site aberto sem ?v= mostra este vendedor */
+const SLUG=String(new URLSearchParams(location.search).get('v')||DEFAULT_SLUG).toLowerCase().replace(/[^a-z0-9-]/g,'');
+const sb=DEMO?null:supabase.createClient(SU,SUPABASE_KEY.trim(),{global:{headers:{'x-vendedor':SLUG}}});
+const off=nf=>{removeEventListener('hashchange',route);document.body.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font:600 16px Inter,system-ui,sans-serif;color:#333;background:#f5f5f5"><div><div style="font-size:42px">🔒</div><h1 style="font-size:20px;margin:10px 0 6px">${nf?'Site não encontrado':'Site temporariamente indisponível'}</h1><p style="font-weight:400;color:#777;margin:0">${nf?'Confira o link recebido.':'Fale com o responsável pelo site.'}</p></div></div>`};
+async function guard(s){if(!s)return false;const{data}=await sb.from('vendedores').select('id').eq('id',V.id).eq('user_id',s.user.id).maybeSingle();if(data)return true;await sb.auth.signOut();toast('Este login não pertence a este site');return false}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+let V={nome:'Shayron',bio:'',whatsapp:'5568984041407',instagram:'shayrondahonda'},M=[],S=[],FT='todos';
+const toast=t=>{const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3000)};
+const wa=t=>`https://wa.me/${V.whatsapp}?text=${encodeURIComponent(t)}`;
+const tel=()=>{const n=(V.whatsapp||'').replace(/^55/,'');return n.length>=10?`(${n.slice(0,2)}) ${n.slice(2,-4)}-${n.slice(-4)}`:n};
+const av=c=>V.foto_url?`<img class="ava" ${c?`style="${c}"`:''} src="${esc(V.foto_url)}" alt="">`:`<div class="ava">${esc((V.nome||'?')[0])}</div>`;
+
+const FIELDS=[
+ ['Dados pessoais',[['nome','Nome completo',12],['telefone','Telefone',6,'tel'],['email','E-mail',6,'email'],['cpf','CPF',4,'cpf'],['rg','RG',4],['rg_emissao','Data de emissão do RG',4,'dt'],['nascimento','Data de nascimento',6,'dt'],['cidade_nascimento','Cidade de nascimento',6],['pai','Nome do pai',6],['mae','Nome da mãe',6]]],
+ ['Endereço',[['cep','CEP',4,'cep'],['rua','Rua',6],['numero','Número',2],['bairro','Bairro',6],['cidade','Cidade',4],['estado','Estado',2],['telefone_recado','Telefone de recado',6,'tel']]],
+ ['Dados do trabalho',[['ocupacao','Ocupação',6,'ocup'],['renda','Renda mensal',6,'rs']]],
+ ['Sobre o consórcio',[['lance','Vai ofertar um lance?',6,'lance'],['lance_valor','Valor do lance',6,'rs'],['moto','Moto escolhida',12,'moto']]]];
+const ALL=FIELDS.flatMap(s=>s[1].map(f=>f[0])),LBL=Object.fromEntries(FIELDS.flatMap(s=>s[1].map(f=>[f[0],f[1]])));
+const REQ=['nome','nascimento','telefone','cpf','lance','moto'];
+const OPC={ocup:['CLT','Autônomo','Servidor público','Empresário / MEI','Aposentado / Pensionista','Estudante','Outro'],lance:['Sim','Não','Ainda não sei']};
+const AC={nome:'name',telefone:'tel',email:'email',cep:'postal-code',rua:'address-line1',cidade:'address-level2',estado:'address-level1'};
+const STL={novo:'Novo',em_analise:'Em análise',contrato_enviado:'Contrato enviado',assinado:'Assinado',recusado:'Recusado'};
+
+async function init(){
+  if(DEMO){M=[{id:'d1',nome:'BIZ 125 ES'},{id:'d2',nome:'CG 160 FAN'}];document.body.insertAdjacentHTML('beforeend','<div style="position:fixed;top:4px;left:0;right:0;background:#222;color:#fff;font:600 12px Inter,sans-serif;text-align:center;padding:5px;z-index:40">MODO DEMONSTRAÇÃO – configure o Supabase no início do arquivo</div>');return route()}
+  const[v,m]=await Promise.all([sb.from('vendedor_publico').select().maybeSingle(),sb.from('motos').select('id,nome,modelo,ativo').eq('ativo',true).order('ordem').order('created_at')]);
+  if(!v.data||v.data.suspenso)return off(!v.data);V=v.data;M=m.data||[];route();
+}
+addEventListener('hashchange',route);
+async function route(){
+  $('#pg').style.width='0';
+  if(location.hash==='#admin'){if(DEMO){$('#app').innerHTML='<div class="lg"><h1>Área do vendedor</h1><p><small>Configure o Supabase para usar o painel.</small></p><a class="btn" href="#">Voltar à ficha</a></div>';return}
+    const{data}=await sb.auth.getSession();await guard(data.session)?adm():login()}
+  else ficha();
+}
+/* ============ FICHA (CLIENTE) ============ */
+function fld([k,l,w,t]){
+  const rq=REQ.includes(k)?' *':'';
+  if(t==='ocup'||t==='lance'||t==='moto'){
+    const o=t==='moto'?[['x','Ainda não escolhi'],...M.map(m=>[m.id,m.nome+(m.modelo?' '+m.modelo:'')])]:OPC[t].map(x=>[x,x]);
+    return `<div class="fl sl s${w}" data-k="${k}"><select id="f_${k}" onchange="this.parentElement.classList.remove('er');lv();prog()"><option value="">Selecione</option>${o.map(x=>`<option value="${esc(x[0])}">${esc(x[1])}</option>`).join('')}</select><label>${l}${rq}</label></div>`}
+  const im={dt:'numeric',tel:'tel',cpf:'numeric',cep:'numeric',rs:'numeric',email:'email'}[t]||'text';
+  return `<div class="fl s${w}${k==='lance_valor'?' hid':''}" data-k="${k}"><input id="f_${k}" placeholder=" " inputmode="${im}" autocomplete="${AC[k]||'off'}" oninput="msk(this,'${t||''}')"><label>${l}${rq}</label></div>`}
+function ficha(){
+  document.title='Pré-contrato CNH | '+V.nome;
+  $('#app').innerHTML=`<header class="hero"><span class="glow"></span><div class="spd"><i></i><i></i><i></i><i></i></div>
+  <div class="who">${av()}<h1>${esc(V.nome)}<svg class="vf" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1d9bf0"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></h1>
+  <h2>Ficha pré-contrato CNH</h2><p>Preencha seus dados e acelere em direção à sua Honda.</p></div></header>
+  <main class="box" id="bx"><form onsubmit="send();return false" novalidate>
+  ${FIELDS.map((s,i)=>`<section class="sec" style="--i:${i}"><div class="st">${s[0]}</div><div class="gr">${s[1].map(fld).join('')}</div></section>`).join('')}
+  <input class="hp" id="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+  <label class="ok"><input type="checkbox" id="ok"><span>Li e concordo com a <a href="${LGPD_URL}" target="_blank" rel="noopener">Política de Privacidade</a>. Autorizo o uso dos meus dados somente para elaborar o contrato e para o contato do vendedor.</span></label>
+  <button class="btn go" id="go" type="submit">${BT}</button></form>
+  <button class="btn cp" onclick="cpl()">Copiar link do contrato</button><a class="pv" href="${LGPD_URL}" target="_blank" rel="noopener">Política de Privacidade</a></main>
+  <footer class="foot2"><b>${esc(V.nome)}</b><br>${tel()}${V.instagram?' · @'+esc(V.instagram):''}<br><a href="#admin">Área do vendedor</a></footer>
+  <a class="bubble" target="_blank" rel="noopener" href="${wa('Olá! Estou preenchendo o pré-contrato do seu site.')}">${av()}Dúvidas? Fale agora!</a>`;
+  const q=new URLSearchParams(location.search).get('moto');
+  if(q){const m=M.find(x=>x.id===q)||M.find(x=>(x.nome||'').toLowerCase().includes(q.toLowerCase()));if(m)$('#f_moto').value=m.id}
+}
+const BT='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>Enviar';
+const cpl=()=>navigator.clipboard.writeText(location.origin+location.pathname+location.search).then(()=>toast('Link do contrato copiado!'),()=>toast('Não foi possível copiar'));
+function lv(){const h=document.querySelector('[data-k=lance_valor]'),on=$('#f_lance')?.value==='Sim';if(!h)return;h.classList.toggle('show',on);if(!on)$('#f_lance_valor').value=''}
+function prog(){const ks=ALL.map(k=>$('#f_'+k)).filter(x=>x&&x.offsetParent),n=ks.filter(x=>x.value.trim()).length;$('#pg').style.width=(n/ks.length*100)+'%'}
+function msk(e,t){let v=e.value.replace(/\D/g,'');
+  if(t==='cpf')v=v.slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  else if(t==='tel')v=v.slice(0,11).replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{5})(\d{1,4})$/,'$1-$2');
+  else if(t==='dt')v=v.slice(0,8).replace(/(\d{2})(\d)/,'$1/$2').replace(/(\d{2})(\d)/,'$1/$2');
+  else if(t==='rs')v=v?brl(v/100):'';
+  else if(t==='cep'){v=v.slice(0,8).replace(/(\d{5})(\d)/,'$1-$2');if(v.length===9)cep(v)}
+  else v=e.value;
+  e.value=v;e.parentElement.classList.remove('er');prog()}
+async function cep(c){try{const r=await(await fetch('https://viacep.com.br/ws/'+c.replace('-','')+'/json/')).json();if(r.erro)return toast('CEP não encontrado');
+  [['rua',r.logradouro],['bairro',r.bairro],['cidade',r.localidade],['estado',r.uf]].forEach(([k,v])=>{if(v)$('#f_'+k).value=v});prog();$('#f_numero').focus()}catch(e){}}
+const cpfOk=c=>{c=c.replace(/\D/g,'');if(c.length!==11||/^(\d)\1+$/.test(c))return false;for(let t=9;t<11;t++){let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);if((s*10%11)%10!=c[t])return false}return true};
+async function send(){
+  const g=k=>($('#f_'+k)?.value||'').trim();
+  if($('#hp').value)return fim({});
+  document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));
+  const chk=[['nome',g('nome').length>=5&&/\s/.test(g('nome')),'Informe o nome completo'],['nascimento',g('nascimento').length===10,'Informe a data de nascimento completa'],
+   ['telefone',g('telefone').replace(/\D/g,'').length>=10,'Telefone inválido'],['cpf',cpfOk(g('cpf')),'CPF inválido'],['email',!g('email')||/^\S+@\S+\.\S+$/.test(g('email')),'E-mail inválido'],
+   ['moto',!!g('moto'),'Escolha a moto'],['lance',!!g('lance'),'Informe se vai ofertar um lance']];
+  const bad=chk.find(c=>!c[1]);
+  if(bad){const el=document.querySelector(`[data-k=${bad[0]}]`);el.classList.add('er');el.scrollIntoView({behavior:'smooth',block:'center'});return toast(bad[2])}
+  if(!$('#ok').checked)return toast('Aceite a Política de Privacidade para enviar');
+  const row={};ALL.forEach(k=>row[k]=g(k)||null);
+  const mo=M.find(m=>m.id===g('moto'));delete row.moto;row.moto_id=mo?mo.id:null;row.moto_nome=mo?mo.nome+(mo.modelo?' '+mo.modelo:''):'Ainda não escolhi';
+  const b=$('#go');b.disabled=true;b.textContent='Enviando...';
+  if(!DEMO){
+    const{error}=await sb.from('contratos').insert({...row,lgpd_aceite:true});
+    if(error){b.disabled=false;b.innerHTML=BT;return toast('Não foi possível enviar. Tente novamente.')}
+    try{await sb.from('leads').insert({tipo:'contrato',moto_id:row.moto_id,moto_nome:row.moto_nome,nome:row.nome,telefone:row.telefone,cpf:row.cpf,nascimento:row.nascimento,detalhes:'Pré-contrato CNH enviado pelo site. Lance: '+(row.lance||'-')+(row.lance_valor?' ('+row.lance_valor+')':'')})}catch(e){}
+  }
+  fim(row);
+}
+function fim(r){
+  $('#pg').style.width='100%';scrollTo({top:0,behavior:'smooth'});
+  const t=`Olá! Acabei de enviar meu pré-contrato CNH pelo site.\nNome: ${r.nome||''}\nMoto: ${r.moto_nome||''}\nLance: ${r.lance||'-'}${r.lance_valor?' ('+r.lance_valor+')':''}`;
+  $('#bx').innerHTML=`<div class="done"><svg class="ck" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/><path d="M30 52l14 14 27-30"/></svg><h2>Pré-contrato enviado!</h2>
+  <p>Recebemos seus dados com segurança. O vendedor vai analisar e falar com você pelo WhatsApp.</p><a class="btn wa" target="_blank" rel="noopener" href="${wa(t)}">Avisar no WhatsApp</a><a class="pv" href="${LGPD_URL}" target="_blank" rel="noopener">Política de Privacidade</a></div>`;
+}
+/* ============ PAINEL DO VENDEDOR ============ */
+function login(){
+  $('#app').innerHTML=`<div class="lg"><h1>Área do vendedor</h1><input id="em" type="email" placeholder="E-mail"><input id="se" type="password" placeholder="Senha" onkeydown="event.key==='Enter'&&doLogin()"><button class="btn" onclick="doLogin()">Entrar</button><p style="text-align:center"><a href="#"><small>← Voltar à ficha</small></a></p></div>`}
+async function doLogin(){const{error}=await sb.auth.signInWithPassword({email:$('#em').value,password:$('#se').value});if(error)return toast('E-mail ou senha incorretos');await guard((await sb.auth.getSession()).data.session)?adm():login()}
+async function out(){await sb.auth.signOut();location.hash=''}
+async function adm(){
+  $('#app').innerHTML='<div class="ad"><h1>Carregando pré-contratos...</h1></div>';
+  const{data,error}=await sb.from('contratos').select().order('created_at',{ascending:false}).limit(500);
+  if(error)return $('#app').innerHTML='<div class="ad"><h1>Erro</h1><p>'+esc(error.message)+'</p><a class="sm" href="#">Voltar</a></div>';
+  S=data||[];lst();
+}
+function lst(){
+  const q=($('#bq')?.value||'').toLowerCase(),n=s=>s==='todos'?S.length:S.filter(f=>f.status===s).length;
+  const L=S.filter(f=>(FT==='todos'||f.status===FT)&&((f.nome||'')+' '+(f.cpf||'')+' '+(f.telefone||'')+' '+(f.moto_nome||'')).toLowerCase().includes(q));
+  $('#app').innerHTML=`<div class="ad"><div class="top"><h1>Pré-contratos recebidos</h1><span><button class="sm" onclick="csv()">Baixar CSV</button> <a class="sm" href="#">Ver formulário</a> <button class="sm" onclick="out()">Sair</button></span></div>
+  <input class="q" id="bq" placeholder="Buscar por nome, CPF, telefone ou moto" value="${esc(q)}" oninput="lst2()">
+  <div class="chips">${['todos',...Object.keys(STL)].map(s=>`<button class="chip ${FT===s?'on':''}" onclick="FT='${s}';lst()">${s==='todos'?'Todas':STL[s]} (${n(s)})</button>`).join('')}</div>
+  <div id="fl">${L.map(f=>`<details class="fc"><summary><div><b>${esc(f.nome)}</b><small>${esc(f.moto_nome||'')} · ${new Date(f.created_at).toLocaleString('pt-BR')}</small></div><span class="bd ${f.status}">${STL[f.status]}</span></summary>
+  <div class="dt">${ALL.filter(k=>k!=='moto'&&f[k]).map(k=>`<div><small>${LBL[k]}</small><b>${esc(f[k])}</b></div>`).join('')}<div><small>Moto escolhida</small><b>${esc(f.moto_nome||'')}</b></div></div>
+  <div class="ac"><select onchange="setSt('${f.id}',this.value)">${Object.entries(STL).map(([k,v])=>`<option value="${k}" ${f.status===k?'selected':''}>${v}</option>`).join('')}</select>
+  <a class="sm" target="_blank" rel="noopener" href="https://wa.me/55${(f.telefone||'').replace(/\D/g,'')}">WhatsApp do cliente</a><button class="sm" onclick="cpf2('${f.id}')">Copiar dados</button><button class="sm" onclick="del('${f.id}')">Excluir</button></div></details>`).join('')||'<p><small>Nenhum pré-contrato encontrado.</small></p>'}</div></div>`;
+  if(q)$('#bq').focus();
+}
+const lst2=()=>{const v=$('#bq').value;lst();const e=$('#bq');e.focus();e.setSelectionRange(v.length,v.length)};
+async function setSt(id,v){const{error}=await sb.from('contratos').update({status:v}).eq('id',id);if(error)return toast('Erro: '+error.message);S.find(f=>f.id===id).status=v;toast('Status atualizado');lst()}
+async function del(id){if(!confirm('Excluir este pré-contrato? Não dá para desfazer.'))return;const{error}=await sb.from('contratos').delete().eq('id',id);if(error)return toast('Erro: '+error.message);S=S.filter(f=>f.id!==id);lst()}
+function cpf2(id){const f=S.find(x=>x.id===id);navigator.clipboard.writeText(ALL.filter(k=>k!=='moto'&&f[k]).map(k=>LBL[k]+': '+f[k]).join('\n')+'\nMoto: '+(f.moto_nome||'')).then(()=>toast('Dados copiados'))}
+function csv(){const ks=ALL.filter(k=>k!=='moto'),c=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const t=[['Data','Status','Moto',...ks.map(k=>LBL[k])].map(c).join(';'),...S.map(f=>[new Date(f.created_at).toLocaleString('pt-BR'),STL[f.status],f.moto_nome,...ks.map(k=>f[k])].map(c).join(';'))].join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+t],{type:'text/csv;charset=utf-8'}));a.download='contratos.csv';a.click()}
+init();
+</script>
+</body>
+</html>
