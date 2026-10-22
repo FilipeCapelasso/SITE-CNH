@@ -88,6 +88,35 @@ details.fc summary div{flex:1;min-width:0}details.fc summary b{display:block}
 .s12{grid-column:span 12}.hid{display:none}.hid.show{display:block;animation:up .5s cubic-bezier(.2,.8,.2,1) both}
 .bd.contrato_enviado{background:#e3eeff;color:#1d4fa8}.bd.assinado{background:#dcf5ea;color:#13734f}
 </style>
+<style id="privcss">
+.ck{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:99999;max-width:760px;margin:0 auto;background:#14141a;color:#f3f3f5;border-radius:16px;padding:16px 18px;box-shadow:0 10px 40px rgba(0,0,0,.45);font:400 13px/1.5 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:none}
+.ck b{display:block;font-size:14px;margin-bottom:4px}.ck p{margin:0 0 6px;color:#d7d7dd}.ck a{color:#fff;text-decoration:underline}
+.ck .r{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.ck button{background:#c80000;color:#fff;border:0;border-radius:999px;padding:10px 24px;font:700 14px Inter,system-ui,sans-serif;cursor:pointer}
+.ao{font-size:12.5px;color:#6b6b76;text-align:center;margin:12px 0 0;line-height:1.5}.ao a{color:inherit;text-decoration:underline}
+</style>
+<script id="privjs">
+/* >>> COLE AQUI o link do site dos Termos (Política de Privacidade). Vazio = mostra o resumo em janela. <<< */
+const POLITICA_URL='';
+function polAbrir(e){
+  if(e&&e.preventDefault)e.preventDefault();
+  if(POLITICA_URL){window.open(POLITICA_URL,'_blank','noopener');return false}
+  const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px';
+  d.innerHTML='<div style="background:#fff;color:#222;border-radius:16px;padding:22px;max-width:420px;line-height:1.5;font:14px Inter,system-ui,sans-serif"><b>Política de Privacidade</b><p>Os dados informados neste site, no formulário ou no chat (nome, telefone, CPF, data de nascimento, entrada e preferências de compra), são usados somente para a cotação e para o contato do vendedor. Você pode pedir a exclusão dos seus dados ao vendedor a qualquer momento.</p><button type="button" style="background:#c80000;color:#fff;border:0;border-radius:999px;padding:10px 24px;font:700 14px Inter,system-ui,sans-serif;cursor:pointer">Entendi</button></div>';
+  d.onclick=function(ev){if(ev.target===d||ev.target.tagName==='BUTTON')d.remove()};document.body.appendChild(d);return false}
+(function(){
+  const K='ck_ok_v1';
+  const lido=()=>{try{return localStorage.getItem(K)==='1'}catch(e){return false}};
+  function banner(){
+    if(lido()||document.getElementById('ckb'))return;
+    const d=document.createElement('div');d.id='ckb';d.className='ck';d.setAttribute('role','dialog');d.setAttribute('aria-label','Aviso de cookies e privacidade');
+    d.innerHTML='<b>Uso de Cookies</b><p>Este site utiliza cookies para melhorar sua experiência de navegação, personalizar conteúdos e analisar o tráfego. Ao continuar navegando, você concorda com o uso desses cookies.</p><p>Seus dados são tratados conforme a Lei Geral de Proteção de Dados (LGPD), com respeito à sua privacidade. Você pode gerenciar suas preferências a qualquer momento nas configurações do navegador.</p><div class="r"><button type="button" id="ckok">Aceitar</button><a href="#" id="ckpp">Política de Privacidade</a></div>';
+    document.body.appendChild(d);d.style.display='block';
+    document.getElementById('ckok').onclick=function(){try{localStorage.setItem(K,'1')}catch(e){}d.remove()};
+    document.getElementById('ckpp').onclick=polAbrir}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',banner);else banner();
+})();
+</script>
 </head>
 <body>
 <div id="pg"></div><div id="app"></div><div id="toast"></div>
@@ -95,7 +124,7 @@ details.fc summary div{flex:1;min-width:0}details.fc summary b{display:block}
 /* ===== CONFIGURE AQUI (mesmo projeto Supabase da vitrine) ===== */
 const SUPABASE_URL='https://qrmwgqkiwoenlkfzjazs.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFybXdncWtpd29lbmxrZnpqYXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4MDc3OTIsImV4cCI6MjEwNjM4Mzc5Mn0.lhgkQS_WcB55uG0SKk0ngQgpc9oruFRt2H2D8orjNnc';
-const LGPD_URL='https://vendedor.site/termos/lgpd';
+const LGPD_URL=POLITICA_URL||'#';
 /* =============================================================== */
 const SU=SUPABASE_URL.trim().replace(/\/(rest|auth)\/v1.*$/,'').replace(/\/+$/,'');
 const DEMO=!(/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SU)&&SUPABASE_KEY.trim().length>30);
@@ -154,9 +183,9 @@ function ficha(){
   <main class="box" id="bx"><form onsubmit="send();return false" novalidate>
   ${FIELDS.map((s,i)=>`<section class="sec" style="--i:${i}"><div class="st">${s[0]}</div><div class="gr">${s[1].map(fld).join('')}</div></section>`).join('')}
   <input class="hp" id="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-  <label class="ok"><input type="checkbox" id="ok"><span>Li e concordo com a <a href="${LGPD_URL}" target="_blank" rel="noopener">Política de Privacidade</a>. Autorizo o uso dos meus dados somente para elaborar o contrato e para o contato do vendedor.</span></label>
-  <button class="btn go" id="go" type="submit">${BT}</button></form>
-  <button class="btn cp" onclick="cpl()">Copiar link do contrato</button><a class="pv" href="${LGPD_URL}" target="_blank" rel="noopener">Política de Privacidade</a></main>
+  <label class="ok"><input type="checkbox" id="ok"><span>Li e concordo com a <a href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a>. Autorizo o uso dos meus dados somente para elaborar o contrato e para o contato do vendedor.</span></label>
+  <button class="btn go" id="go" type="submit">${BT}</button><p class="ao">Ao enviar, você concorda com nossa <a href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a>.</p>${V.whatsapp?`<a class="btn wa" style="margin-top:10px" target="_blank" rel="noopener" href="${wa('Olá! Vim pelo site e prefiro falar direto pelo WhatsApp.')}">Prefiro falar pelo WhatsApp</a>`:''}</form>
+  <button class="btn cp" onclick="cpl()">Copiar link do contrato</button><a class="pv" href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a></main>
   <footer class="foot2"><b>${esc(V.nome)}</b><br>${tel()}${V.instagram?' · @'+esc(V.instagram):''}<br><a href="#admin">Área do vendedor</a></footer>
   <a class="bubble" target="_blank" rel="noopener" href="${wa('Olá! Estou preenchendo o pré-contrato do seu site.')}">${av()}Dúvidas? Fale agora!</a>`;
   const q=new URLSearchParams(location.search).get('moto');
@@ -201,7 +230,7 @@ function fim(r){
   $('#pg').style.width='100%';scrollTo({top:0,behavior:'smooth'});
   const t=`Olá! Acabei de enviar meu pré-contrato CNH pelo site.\nNome: ${r.nome||''}\nMoto: ${r.moto_nome||''}\nLance: ${r.lance||'-'}${r.lance_valor?' ('+r.lance_valor+')':''}`;
   $('#bx').innerHTML=`<div class="done"><svg class="ck" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/><path d="M30 52l14 14 27-30"/></svg><h2>Pré-contrato enviado!</h2>
-  <p>Recebemos seus dados com segurança. O vendedor vai analisar e falar com você pelo WhatsApp.</p><a class="btn wa" target="_blank" rel="noopener" href="${wa(t)}">Avisar no WhatsApp</a><a class="pv" href="${LGPD_URL}" target="_blank" rel="noopener">Política de Privacidade</a></div>`;
+  <p>Recebemos seus dados com segurança. O vendedor vai analisar e falar com você pelo WhatsApp.</p><a class="btn wa" target="_blank" rel="noopener" href="${wa(t)}">Avisar no WhatsApp</a><a class="pv" href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a></div>`;
 }
 /* ============ PAINEL DO VENDEDOR ============ */
 function login(){
