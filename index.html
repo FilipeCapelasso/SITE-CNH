@@ -98,9 +98,11 @@ const LGPD_URL='https://vendedor.site/termos/lgpd';
 const SU=SUPABASE_URL.trim().replace(/\/(rest|auth)\/v1.*$/,'').replace(/\/+$/,'');
 const DEMO=!(/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SU)&&SUPABASE_KEY.trim().length>30);
 const DEFAULT_SLUG=''; /* sem ?v=slug no link o site NÃO abre (evita misturar dados de vendedores) */
-const SLUG=String(new URLSearchParams(location.search).get('v')||DEFAULT_SLUG).toLowerCase().replace(/[^a-z0-9-]/g,'');
+/* o vendedor é identificado por ?v=slug OU pelo último trecho do endereço (ex: /ficha/slug-dele) */
+const PATH_SLUG=(location.pathname.split('/').filter(Boolean).pop()||'').replace(/\.html?$/i,'');
+const SLUG=String(new URLSearchParams(location.search).get('v')||(/^(index|ficha|contrato|cdc|cnh|vitrine)?$/i.test(PATH_SLUG)?'':PATH_SLUG)||DEFAULT_SLUG).toLowerCase().replace(/[^a-z0-9-]/g,'');
 const sb=DEMO?null:supabase.createClient(SU,SUPABASE_KEY.trim(),{global:{headers:{'x-vendedor':SLUG}}});
-const off=nf=>{removeEventListener('hashchange',route);document.body.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font:600 16px Inter,system-ui,sans-serif;color:#333;background:#f5f5f5"><div><div style="font-size:42px">🔒</div><h1 style="font-size:20px;margin:10px 0 6px">${nf?'Site não encontrado':'Site temporariamente indisponível'}</h1><p style="font-weight:400;color:#777;margin:0">${nf?'Confira o link recebido.':'Fale com o responsável pelo site.'}</p></div></div>`};
+const off=nf=>{removeEventListener('hashchange',route);document.body.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font:600 16px Inter,system-ui,sans-serif;color:#333;background:#f5f5f5"><div><div style="font-size:42px">🔒</div><h1 style="font-size:20px;margin:10px 0 6px">${nf?(SLUG?'Vendedor não encontrado':'Link sem o endereço do vendedor'):'Site temporariamente indisponível'}</h1><p style="font-weight:400;color:#777;margin:0">${nf?(SLUG?'Confira o link recebido ou peça um novo ao responsável.':'Abra o site assim: endereço-do-site/?v=<b>slug-do-vendedor</b>'):'Fale com o responsável pelo site.'}</p></div></div>`};
 async function guard(s){if(!s)return false;const{data}=await sb.from('vendedores').select('id').eq('id',V.id).eq('user_id',s.user.id).maybeSingle();if(data)return true;await sb.auth.signOut();toast('Este login não pertence a este site');return false}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
