@@ -97,7 +97,7 @@ const LGPD_URL='https://vendedor.site/termos/lgpd';
 /* =============================================================== */
 const SU=SUPABASE_URL.trim().replace(/\/(rest|auth)\/v1.*$/,'').replace(/\/+$/,'');
 const DEMO=!(/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SU)&&SUPABASE_KEY.trim().length>30);
-const DEFAULT_SLUG='shayron'; /* site aberto sem ?v= mostra este vendedor */
+const DEFAULT_SLUG=''; /* sem ?v=slug no link o site NÃO abre (evita misturar dados de vendedores) */
 const SLUG=String(new URLSearchParams(location.search).get('v')||DEFAULT_SLUG).toLowerCase().replace(/[^a-z0-9-]/g,'');
 const sb=DEMO?null:supabase.createClient(SU,SUPABASE_KEY.trim(),{global:{headers:{'x-vendedor':SLUG}}});
 const off=nf=>{removeEventListener('hashchange',route);document.body.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font:600 16px Inter,system-ui,sans-serif;color:#333;background:#f5f5f5"><div><div style="font-size:42px">🔒</div><h1 style="font-size:20px;margin:10px 0 6px">${nf?'Site não encontrado':'Site temporariamente indisponível'}</h1><p style="font-weight:400;color:#777;margin:0">${nf?'Confira o link recebido.':'Fale com o responsável pelo site.'}</p></div></div>`};
@@ -105,7 +105,7 @@ async function guard(s){if(!s)return false;const{data}=await sb.from('vendedores
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-let V={nome:'Shayron',bio:'',whatsapp:'5568984041407',instagram:'shayrondahonda'},M=[],S=[],FT='todos';
+let V={nome:'Vendedor',bio:'',whatsapp:'',instagram:''},M=[],S=[],FT='todos';
 const toast=t=>{const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3000)};
 const wa=t=>`https://wa.me/${V.whatsapp}?text=${encodeURIComponent(t)}`;
 const tel=()=>{const n=(V.whatsapp||'').replace(/^55/,'');return n.length>=10?`(${n.slice(0,2)}) ${n.slice(2,-4)}-${n.slice(-4)}`:n};
