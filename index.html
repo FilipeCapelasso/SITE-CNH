@@ -140,13 +140,15 @@ async function segSend(tab,row){
   const r=await segInsert(tab,row);
   if(!r.ok){const a=obxGet();a.push({slug:SLUG,tab,row,ts:Date.now(),n:0});obxSet(a)}
   return r.ok}
+function obxAdd(it){const a=obxGet().filter(x=>!(it.rpc&&x.rpc===it.rpc&&x.row&&x.row.p&&it.row&&it.row.p&&x.row.p.id===it.row.p.id));a.push(it);obxSet(a)}
 async function obxFlush(){
   try{if(typeof sb==='undefined'||!sb)return}catch(e){return}
   const a=obxGet();if(!a.length)return;const resto=[];
   for(const it of a){
     if(it.slug!==SLUG){resto.push(it);continue}
-    const r=await segInsert(it.tab,it.row);
-    if(!r.ok){it.n=(it.n||0)+1;if(it.n<30&&Date.now()-it.ts<3*864e5)resto.push(it)}}
+    let ok=false;
+    try{if(it.rpc){const r=await sb.rpc(it.rpc,it.row);ok=!(r&&r.error)}else{const r=await segInsert(it.tab,it.row);ok=r.ok}}catch(e){ok=false}
+    if(!ok){it.n=(it.n||0)+1;if(it.n<30&&Date.now()-it.ts<3*864e5)resto.push(it)}}
   obxSet(resto)}
 addEventListener('online',()=>obxFlush());setInterval(()=>obxFlush(),60000);setTimeout(()=>obxFlush(),2500);
 /* ===== PREENCHIMENTO EM ANDAMENTO: o que o cliente digita já chega ao vendedor, mesmo sem clicar em "Enviar" ===== */
@@ -159,9 +161,10 @@ function rascunho(origem,key,dados){
   try{if(typeof sb==='undefined'||!sb||typeof sb.rpc!=='function')return}catch(e){return}
   clearTimeout(_rt);
   _rt=setTimeout(()=>{const id=rascId(key);if(!id)return;
-    sb.rpc('registrar_rascunho',{p:{id,origem,nome:dados.nome,telefone:dados.telefone,moto_nome:dados.moto_nome,cor:dados.cor,dados}}).then(()=>{},()=>{})},1200)}
+    const p={id,origem,nome:dados.nome,telefone:dados.telefone,moto_nome:dados.moto_nome,cor:dados.cor,dados},fila=()=>obxAdd({slug:SLUG,rpc:'registrar_rascunho',row:{p},ts:Date.now(),n:0});
+    try{sb.rpc('registrar_rascunho',{p}).then(r=>{if(r&&r.error)fila()},()=>fila())}catch(e){fila()}},1200)}
 function rascCompleto(origem,key){
-  try{const id=rascId(key);if(id&&sb&&sb.rpc)sb.rpc('registrar_rascunho',{p:{id,origem,completo:true}}).then(()=>{},()=>{})}catch(e){}}
+  try{const id=rascId(key);if(id&&sb&&sb.rpc){const p={id,origem,completo:true};sb.rpc('registrar_rascunho',{p}).then(r=>{if(r&&r.error)obxAdd({slug:SLUG,rpc:'registrar_rascunho',row:{p},ts:Date.now(),n:0})},()=>{})}}catch(e){}}
 </script>
 </head>
 <body>
@@ -283,7 +286,7 @@ async function send(){
   const b=$('#go');b.disabled=true;b.textContent='Enviando...';
   if(!DEMO){
     const rr=await segInsert('contratos',{...row,lgpd_aceite:true});const error=rr.ok?null:rr.error;if(!error)rascCompleto('contrato','form');
-    if(error){b.disabled=false;b.innerHTML=BT;return toast('Não foi possível enviar. Tente novamente.')}
+    if(error){obxAdd({slug:SLUG,tab:'contratos',row:{...row,lgpd_aceite:true},ts:Date.now(),n:0});try{await segSend('leads',{tipo:'contrato',moto_id:row.moto_id,moto_nome:row.moto_nome,nome:row.nome,telefone:row.telefone,cpf:row.cpf,nascimento:row.nascimento,detalhes:'PRÉ-CONTRATO COMPLETO (falhou ao gravar: '+((error&&error.message)||'erro')+') '+JSON.stringify(row)})}catch(e){}b.disabled=false;b.innerHTML=BT;return toast('Seus dados ficaram guardados e serão reenviados automaticamente. Para agilizar, chame o vendedor no WhatsApp.')}
     try{await segSend('leads',{tipo:'contrato',moto_id:row.moto_id,moto_nome:row.moto_nome,nome:row.nome,telefone:row.telefone,cpf:row.cpf,nascimento:row.nascimento,detalhes:'Pré-contrato CNH enviado pelo site. Lance: '+(row.lance||'-')+(row.lance_valor?' ('+row.lance_valor+')':'')})}catch(e){}
   }
   fim(row);
