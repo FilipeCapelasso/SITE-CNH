@@ -117,6 +117,52 @@ function polAbrir(e){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',banner);else banner();
 })();
 </script>
+<script id="segjs">
+/* ===== ENVIO SEGURO: o dado do cliente nunca se perde ===== */
+const SEG_OBX='obx_v2';
+function obxGet(){try{return JSON.parse(localStorage.getItem(SEG_OBX)||'[]')}catch(e){return[]}}
+function obxSet(a){try{localStorage.setItem(SEG_OBX,JSON.stringify(a.slice(-40)))}catch(e){}}
+/* insere; se o banco recusar uma coluna que não existe (ex.: "cor"), tira a coluna e tenta de novo (o dado principal nunca é perdido) */
+async function segInsert(tab,row){
+  const r={...row};
+  for(let i=0;i<8;i++){
+    let q;try{q=await sb.from(tab).insert(r)}catch(e){return{ok:false,error:e}}
+    if(!q.error)return{ok:true,row:r};
+    const msg=q.error.message||'',m=/Could not find the '([a-z_0-9]+)' column/i.exec(msg)||/column "?([a-z_0-9]+)"? (?:of relation|does not exist)/i.exec(msg);
+    if(m&&Object.prototype.hasOwnProperty.call(r,m[1])&&m[1]!=='vendedor_id'&&m[1]!=='lgpd_aceite'){
+      const val=r[m[1]];delete r[m[1]];
+      if(val&&tab==='leads')r.detalhes=((r.detalhes?r.detalhes+' | ':'')+m[1]+': '+val);
+      continue}
+    return{ok:false,error:q.error}}
+  return{ok:false,error:{message:'tentativas esgotadas'}}}
+/* grava; se não der, guarda no aparelho e reenvia sozinho (ao abrir o site, ao voltar a internet e a cada minuto) */
+async function segSend(tab,row){
+  const r=await segInsert(tab,row);
+  if(!r.ok){const a=obxGet();a.push({slug:SLUG,tab,row,ts:Date.now(),n:0});obxSet(a)}
+  return r.ok}
+async function obxFlush(){
+  try{if(typeof sb==='undefined'||!sb)return}catch(e){return}
+  const a=obxGet();if(!a.length)return;const resto=[];
+  for(const it of a){
+    if(it.slug!==SLUG){resto.push(it);continue}
+    const r=await segInsert(it.tab,it.row);
+    if(!r.ok){it.n=(it.n||0)+1;if(it.n<30&&Date.now()-it.ts<3*864e5)resto.push(it)}}
+  obxSet(resto)}
+addEventListener('online',()=>obxFlush());setInterval(()=>obxFlush(),60000);setTimeout(()=>obxFlush(),2500);
+/* ===== PREENCHIMENTO EM ANDAMENTO: o que o cliente digita já chega ao vendedor, mesmo sem clicar em "Enviar" ===== */
+function rascId(key){
+  try{const k='rid_v1:'+SLUG+':'+key;let v=sessionStorage.getItem(k);
+    if(!v){v=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});sessionStorage.setItem(k,v)}
+    return v}catch(e){return null}}
+let _rt=null;
+function rascunho(origem,key,dados){
+  try{if(typeof sb==='undefined'||!sb||typeof sb.rpc!=='function')return}catch(e){return}
+  clearTimeout(_rt);
+  _rt=setTimeout(()=>{const id=rascId(key);if(!id)return;
+    sb.rpc('registrar_rascunho',{p:{id,origem,nome:dados.nome,telefone:dados.telefone,moto_nome:dados.moto_nome,cor:dados.cor,dados}}).then(()=>{},()=>{})},1200)}
+function rascCompleto(origem,key){
+  try{const id=rascId(key);if(id&&sb&&sb.rpc)sb.rpc('registrar_rascunho',{p:{id,origem,completo:true}}).then(()=>{},()=>{})}catch(e){}}
+</script>
 </head>
 <body>
 <div id="pg"></div><div id="app"></div><div id="toast"></div>
@@ -148,7 +194,7 @@ const FIELDS=[
  ['Dados pessoais',[['nome','Nome completo',12],['telefone','Telefone',6,'tel'],['email','E-mail',6,'email'],['cpf','CPF',4,'cpf'],['rg','RG',4],['rg_emissao','Data de emissão do RG',4,'dt'],['nascimento','Data de nascimento',6,'dt'],['cidade_nascimento','Cidade de nascimento',6],['pai','Nome do pai',6],['mae','Nome da mãe',6]]],
  ['Endereço',[['cep','CEP',4,'cep'],['rua','Rua',6],['numero','Número',2],['bairro','Bairro',6],['cidade','Cidade',4],['estado','Estado',2],['telefone_recado','Telefone de recado',6,'tel']]],
  ['Dados do trabalho',[['ocupacao','Ocupação',6,'ocup'],['renda','Renda mensal',6,'rs']]],
- ['Sobre o consórcio',[['lance','Vai ofertar um lance?',6,'lance'],['lance_valor','Valor do lance',6,'rs'],['moto','Moto escolhida',12,'moto']]]];
+ ['Sobre o consórcio',[['lance','Vai ofertar um lance?',6,'lance'],['lance_valor','Valor do lance',6,'rs'],['moto','Moto escolhida',6,'moto'],['cor','Cor da moto',6,'cor']]]];
 const ALL=FIELDS.flatMap(s=>s[1].map(f=>f[0])),LBL=Object.fromEntries(FIELDS.flatMap(s=>s[1].map(f=>[f[0],f[1]])));
 const REQ=['nome','nascimento','telefone','cpf','lance','moto'];
 const OPC={ocup:['CLT','Autônomo','Servidor público','Empresário / MEI','Aposentado / Pensionista','Estudante','Outro'],lance:['Sim','Não','Ainda não sei']};
@@ -157,7 +203,7 @@ const STL={novo:'Novo',em_analise:'Em análise',contrato_enviado:'Contrato envia
 
 async function init(){
   if(DEMO){M=[{id:'d1',nome:'BIZ 125 ES'},{id:'d2',nome:'CG 160 FAN'}];document.body.insertAdjacentHTML('beforeend','<div style="position:fixed;top:4px;left:0;right:0;background:#222;color:#fff;font:600 12px Inter,sans-serif;text-align:center;padding:5px;z-index:40">MODO DEMONSTRAÇÃO – configure o Supabase no início do arquivo</div>');return route()}
-  const[v,m]=await Promise.all([sb.from('vendedor_publico').select().maybeSingle(),sb.from('motos').select('id,nome,modelo,ativo').eq('ativo',true).order('ordem').order('created_at')]);
+  const[v,m]=await Promise.all([sb.from('vendedor_publico').select().maybeSingle(),selMotos()]);
   if(!v.data||v.data.suspenso)return off(!v.data);V=v.data;M=m.data||[];route();
 }
 addEventListener('hashchange',route);
@@ -168,11 +214,22 @@ async function route(){
   else ficha();
 }
 /* ============ FICHA (CLIENTE) ============ */
+
+function corAtualiza(){
+  const sel=document.getElementById('f_cor');if(!sel)return;
+  const mid=(document.getElementById('f_moto')||{}).value,m=M.find(x=>String(x.id)===String(mid)),cs=(m&&Array.isArray(m.cores)?m.cores:[]).filter(Boolean);
+  const op=(v,t)=>`<option value="${esc(v)}">${esc(t||v)}</option>`;
+  if(!mid){sel.innerHTML='<option value="">Escolha a moto primeiro</option>';sel.disabled=true;return}
+  sel.disabled=false;
+  sel.innerHTML='<option value="">Selecione a cor</option>'+(cs.length?cs.map(c=>op(c)).join('')+op('Sem preferência'):op('A definir com o vendedor'))}
+async function selMotos(){
+  const q=c=>sb.from('motos').select(c).eq('ativo',true).order('ordem').order('created_at');
+  let r=await q('id,nome,modelo,ativo,cores');if(r.error)r=await q('id,nome,modelo,ativo');return r}
 function fld([k,l,w,t]){
   const rq=REQ.includes(k)?' *':'';
-  if(t==='ocup'||t==='lance'||t==='moto'){
-    const o=t==='moto'?[['x','Ainda não escolhi'],...M.map(m=>[m.id,m.nome+(m.modelo?' '+m.modelo:'')])]:OPC[t].map(x=>[x,x]);
-    return `<div class="fl sl s${w}" data-k="${k}"><select id="f_${k}" onchange="this.parentElement.classList.remove('er');lv();prog()"><option value="">Selecione</option>${o.map(x=>`<option value="${esc(x[0])}">${esc(x[1])}</option>`).join('')}</select><label>${l}${rq}</label></div>`}
+  if(t==='ocup'||t==='lance'||t==='moto'||t==='cor'){
+    const o=t==='moto'?[['x','Ainda não escolhi'],...M.map(m=>[m.id,m.nome+(m.modelo?' '+m.modelo:'')])]:t==='cor'?[]:OPC[t].map(x=>[x,x]);
+    return `<div class="fl sl s${w}" data-k="${k}"><select id="f_${k}"${t==='cor'?' disabled':''} onchange="this.parentElement.classList.remove('er');lv();${t==='moto'?'corAtualiza();':''}prog()"><option value="">${t==='cor'?'Escolha a moto primeiro':'Selecione'}</option>${o.map(x=>`<option value="${esc(x[0])}">${esc(x[1])}</option>`).join('')}</select><label>${l}${rq}</label></div>`}
   const im={dt:'numeric',tel:'tel',cpf:'numeric',cep:'numeric',rs:'numeric',email:'email'}[t]||'text';
   return `<div class="fl s${w}${k==='lance_valor'?' hid':''}" data-k="${k}"><input id="f_${k}" placeholder=" " inputmode="${im}" autocomplete="${AC[k]||'off'}" oninput="msk(this,'${t||''}')"><label>${l}${rq}</label></div>`}
 function ficha(){
@@ -184,7 +241,7 @@ function ficha(){
   ${FIELDS.map((s,i)=>`<section class="sec" style="--i:${i}"><div class="st">${s[0]}</div><div class="gr">${s[1].map(fld).join('')}</div></section>`).join('')}
   <input class="hp" id="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
   <label class="ok"><input type="checkbox" id="ok"><span>Li e concordo com a <a href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a>. Autorizo o uso dos meus dados somente para elaborar o contrato e para o contato do vendedor.</span></label>
-  <button class="btn go" id="go" type="submit">${BT}</button><p class="ao">Ao enviar, você concorda com nossa <a href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a>.</p>${V.whatsapp?`<a class="btn wa" style="margin-top:10px" target="_blank" rel="noopener" href="${wa('Olá! Vim pelo site e prefiro falar direto pelo WhatsApp.')}">Prefiro falar pelo WhatsApp</a>`:''}</form>
+  <button class="btn go" id="go" type="submit">${BT}</button><p class="ao">Ao preencher ou enviar, você concorda com nossa <a href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a>. O que você digita já fica disponível ao vendedor, para ele poder te ajudar, mesmo que você não conclua o envio.</p>${V.whatsapp?`<a class="btn wa" style="margin-top:10px" target="_blank" rel="noopener" href="${wa('Olá! Vim pelo site e prefiro falar direto pelo WhatsApp.')}">Prefiro falar pelo WhatsApp</a>`:''}</form>
   <button class="btn cp" onclick="cpl()">Copiar link do contrato</button><a class="pv" href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a></main>
   <footer class="foot2"><b>${esc(V.nome)}</b><br>${tel()}${V.instagram?' · @'+esc(V.instagram):''}<br><a href="#admin">Área do vendedor</a></footer>
   <a class="bubble" target="_blank" rel="noopener" href="${wa('Olá! Estou preenchendo o pré-contrato do seu site.')}">${av()}Dúvidas? Fale agora!</a>`;
@@ -206,13 +263,18 @@ function msk(e,t){let v=e.value.replace(/\D/g,'');
 async function cep(c){try{const r=await(await fetch('https://viacep.com.br/ws/'+c.replace('-','')+'/json/')).json();if(r.erro)return toast('CEP não encontrado');
   [['rua',r.logradouro],['bairro',r.bairro],['cidade',r.localidade],['estado',r.uf]].forEach(([k,v])=>{if(v)$('#f_'+k).value=v});prog();$('#f_numero').focus()}catch(e){}}
 const cpfOk=c=>{c=c.replace(/\D/g,'');if(c.length!==11||/^(\d)\1+$/.test(c))return false;for(let t=9;t<11;t++){let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);if((s*10%11)%10!=c[t])return false}return true};
+function cadRasc(e){const id=e.target&&e.target.id||'';if(id.indexOf('f_')!==0)return;
+  try{const gg=k=>(document.getElementById('f_'+k)||{value:''}).value.trim(),d={};ALL.forEach(k=>{const v=gg(k);if(v)d[k]=v});
+    const mo=M.find(m=>String(m.id)===String(d.moto));delete d.moto;if(mo)d.moto_nome=mo.nome+(mo.modelo?' '+mo.modelo:'');
+    rascunho('contrato','form',d)}catch(x){}}
+document.addEventListener('input',cadRasc,true);document.addEventListener('change',cadRasc,true);
 async function send(){
   const g=k=>($('#f_'+k)?.value||'').trim();
   if($('#hp').value)return fim({});
   document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));
   const chk=[['nome',g('nome').length>=5&&/\s/.test(g('nome')),'Informe o nome completo'],['nascimento',g('nascimento').length===10,'Informe a data de nascimento completa'],
    ['telefone',g('telefone').replace(/\D/g,'').length>=10,'Telefone inválido'],['cpf',cpfOk(g('cpf')),'CPF inválido'],['email',!g('email')||/^\S+@\S+\.\S+$/.test(g('email')),'E-mail inválido'],
-   ['moto',!!g('moto'),'Escolha a moto'],['lance',!!g('lance'),'Informe se vai ofertar um lance']];
+   ['moto',!!g('moto'),'Escolha a moto'],['cor',!!g('cor'),'Informe a cor da moto'],['lance',!!g('lance'),'Informe se vai ofertar um lance']];
   const bad=chk.find(c=>!c[1]);
   if(bad){const el=document.querySelector(`[data-k=${bad[0]}]`);el.classList.add('er');el.scrollIntoView({behavior:'smooth',block:'center'});return toast(bad[2])}
   if(!$('#ok').checked)return toast('Aceite a Política de Privacidade para enviar');
@@ -220,9 +282,9 @@ async function send(){
   const mo=M.find(m=>m.id===g('moto'));delete row.moto;row.moto_id=mo?mo.id:null;row.moto_nome=mo?mo.nome+(mo.modelo?' '+mo.modelo:''):'Ainda não escolhi';
   const b=$('#go');b.disabled=true;b.textContent='Enviando...';
   if(!DEMO){
-    const{error}=await sb.from('contratos').insert({...row,lgpd_aceite:true});
+    const rr=await segInsert('contratos',{...row,lgpd_aceite:true});const error=rr.ok?null:rr.error;if(!error)rascCompleto('contrato','form');
     if(error){b.disabled=false;b.innerHTML=BT;return toast('Não foi possível enviar. Tente novamente.')}
-    try{await sb.from('leads').insert({tipo:'contrato',moto_id:row.moto_id,moto_nome:row.moto_nome,nome:row.nome,telefone:row.telefone,cpf:row.cpf,nascimento:row.nascimento,detalhes:'Pré-contrato CNH enviado pelo site. Lance: '+(row.lance||'-')+(row.lance_valor?' ('+row.lance_valor+')':'')})}catch(e){}
+    try{await segSend('leads',{tipo:'contrato',moto_id:row.moto_id,moto_nome:row.moto_nome,nome:row.nome,telefone:row.telefone,cpf:row.cpf,nascimento:row.nascimento,detalhes:'Pré-contrato CNH enviado pelo site. Lance: '+(row.lance||'-')+(row.lance_valor?' ('+row.lance_valor+')':'')})}catch(e){}
   }
   fim(row);
 }
