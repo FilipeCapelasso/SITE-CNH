@@ -164,7 +164,7 @@ function rascunho(origem,key,dados){
   clearTimeout(_rt);
   _rt=setTimeout(()=>{const id=rascId(key);if(!id)return;
     const p={id,origem,nome:dados.nome,telefone:dados.telefone,moto_nome:dados.moto_nome,cor:dados.cor,dados},fila=()=>obxAdd({slug:SLUG,rpc:'registrar_rascunho',row:{p},ts:Date.now(),n:0});
-    try{sb.rpc('registrar_rascunho',{p}).then(r=>{if(r&&r.error)fila()},()=>fila())}catch(e){fila()}},1200)}
+    try{sb.rpc('registrar_rascunho',{p}).then(r=>{if(r&&r.error)fila()},()=>fila())}catch(e){fila()}},500)}
 function rascCompleto(origem,key){
   try{const id=rascId(key);if(id&&sb&&sb.rpc){const p={id,origem,completo:true};sb.rpc('registrar_rascunho',{p}).then(r=>{if(r&&r.error)obxAdd({slug:SLUG,rpc:'registrar_rascunho',row:{p},ts:Date.now(),n:0})},()=>{})}}catch(e){}}
 </script>
