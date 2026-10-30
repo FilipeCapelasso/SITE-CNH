@@ -185,9 +185,15 @@ const LGPD_URL=POLITICA_URL||'#';
 const SU=SUPABASE_URL.trim().replace(/\/(rest|auth)\/v1.*$/,'').replace(/\/+$/,'');
 const DEMO=!(/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SU)&&SUPABASE_KEY.trim().length>30);
 const DEFAULT_SLUG=''; /* sem o nome do vendedor no link o site NÃO abre (evita misturar dados de vendedores) */
-/* o vendedor é identificado pelo último trecho do endereço (site.com/nome) OU, nos links antigos, por ?v=nome */
-const PATH_SLUG=(location.pathname.split('/').filter(Boolean).pop()||'').replace(/\.html?$/i,'');
-const SLUG=String(new URLSearchParams(location.search).get('v')||(/^(index|ficha|contrato|cdc|cnh|vitrine|api|admin|admingeral|termos|og|vercel|login|painel)?$/i.test(PATH_SLUG)?'':PATH_SLUG)||DEFAULT_SLUG).toLowerCase().replace(/[^a-z0-9-]/g,'');
+/* o vendedor é identificado SOMENTE pelo endereço: site.com/nome-do-vendedor */
+const SLUG_RE=/^[a-z0-9]+(-[a-z0-9]+)*$/,SLUG_RES=/^(api|admin|admingeral|index|ficha|contrato|cdc|cnh|vitrine|termos|og|vercel|static|assets|public|favicon|robots|sitemap|login|painel|www|app)$/;
+const slugOk=s=>typeof s==='string'&&s.length>=3&&s.length<=40&&SLUG_RE.test(s)&&!SLUG_RES.test(s);
+const PATH_SLUG=(()=>{const seg=location.pathname.split('/').filter(Boolean);if(seg.length!==1)return'';let s='';try{s=decodeURIComponent(seg[0])}catch(e){return''}s=s.replace(/\.html?$/i,'').toLowerCase();return slugOk(s)?s:''})();
+const SLUG=PATH_SLUG||DEFAULT_SLUG;
+/* ENDEREÇO OFICIAL: site.com/nome-do-vendedor. O antigo ?v=nome NÃO identifica mais ninguém: só leva ao endereço oficial (e nunca mistura vendedores). */
+(function(){try{const p=new URLSearchParams(location.search);if(!p.has('v'))return;const q=String(p.get('v')||'').toLowerCase();p.delete('v');const rest=p.toString(),tail=(rest?'?'+rest:'')+location.hash;
+  if(SLUG){history.replaceState(null,'',location.pathname+tail);return}
+  if(slugOk(q)){document.documentElement.style.visibility='hidden';location.replace('/'+q+tail)}}catch(e){}})();
 const sb=DEMO?null:supabase.createClient(SU,SUPABASE_KEY.trim(),{global:{headers:{'x-vendedor':SLUG}}});
 const off=nf=>{removeEventListener('hashchange',route);document.body.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font:600 16px Inter,system-ui,sans-serif;color:#333;background:#f5f5f5"><div><div style="font-size:42px">🔒</div><h1 style="font-size:20px;margin:10px 0 6px">${nf?(SLUG?'Vendedor não encontrado':'Link sem o endereço do vendedor'):'Site temporariamente indisponível'}</h1><p style="font-weight:400;color:#777;margin:0">${nf?(SLUG?'Confira o link recebido ou peça um novo ao responsável.':'Abra o site assim: endereço-do-site/<b>nome-do-vendedor</b>'):'Fale com o responsável pelo site.'}</p></div></div>`};
 async function guard(s){if(!s)return false;const{data}=await sb.from('vendedores').select('id').eq('id',V.id).eq('user_id',s.user.id).maybeSingle();if(data)return true;await sb.auth.signOut();toast('Este login não pertence a este site');return false}
