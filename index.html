@@ -161,13 +161,15 @@ function rascId(key){
   try{const k='rid_v1:'+SLUG+':'+key;let v=sessionStorage.getItem(k);
     if(!v){v=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});sessionStorage.setItem(k,v)}
     return v}catch(e){return null}}
-let _rt=null;
+let _rt=null;const _rcOk={};
 function rascunho(origem,key,dados){
   try{if(typeof sb==='undefined'||!sb||typeof sb.rpc!=='function')return}catch(e){return}
   clearTimeout(_rt);
-  _rt=setTimeout(()=>{const id=rascId(key);if(!id)return;
+  const go=()=>{const id=rascId(key);if(!id)return;
     const p={id,origem,nome:dados.nome,telefone:dados.telefone,moto_nome:dados.moto_nome,cor:dados.cor,dados},fila=()=>obxAdd({slug:SLUG,rpc:'registrar_rascunho',row:{p},ts:Date.now(),n:0});
-    try{sb.rpc('registrar_rascunho',{p}).then(r=>{if(r&&r.error)fila()},()=>fila())}catch(e){fila()}},500)}
+    try{sb.rpc('registrar_rascunho',{p}).then(r=>{if(r&&r.error)fila()},()=>fila())}catch(e){fila()}};
+  const dg=String((dados&&dados.telefone)||'').replace(/\D/g,'').length,pr=dg>=10&&String((dados&&(dados.nome||dados.nome_completo))||'').trim().length>=2;
+  if(pr&&!_rcOk[key]){_rcOk[key]=1;go()}else _rt=setTimeout(go,400)}
 function rascCompleto(origem,key){
   try{const id=rascId(key);if(id&&sb&&sb.rpc){const p={id,origem,completo:true};sb.rpc('registrar_rascunho',{p}).then(r=>{if(r&&r.error)obxAdd({slug:SLUG,rpc:'registrar_rascunho',row:{p},ts:Date.now(),n:0})},()=>{})}}catch(e){}}
 </script>
