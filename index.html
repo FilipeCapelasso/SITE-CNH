@@ -206,14 +206,9 @@ const wa=t=>`https://wa.me/${V.whatsapp}?text=${encodeURIComponent(t)}`;
 const tel=()=>{const n=(V.whatsapp||'').replace(/^55/,'');return n.length>=10?`(${n.slice(0,2)}) ${n.slice(2,-4)}-${n.slice(-4)}`:n};
 const av=c=>V.foto_url?`<img class="ava" ${c?`style="${c}"`:''} src="${esc(V.foto_url)}" alt="">`:`<div class="ava">${esc((V.nome||'?')[0])}</div>`;
 
-const FIELDS=[
- ['Dados pessoais',[['nome','Nome completo',12],['telefone','Telefone',6,'tel'],['email','E-mail',6,'email'],['cpf','CPF',4,'cpf'],['rg','RG',4],['rg_emissao','Data de emissão do RG',4,'dt'],['nascimento','Data de nascimento',6,'dt'],['cidade_nascimento','Cidade de nascimento',6],['pai','Nome do pai',6],['mae','Nome da mãe',6]]],
- ['Endereço',[['cep','CEP',4,'cep'],['rua','Rua',6],['numero','Número',2],['bairro','Bairro',6],['cidade','Cidade',4],['estado','Estado',2],['telefone_recado','Telefone de recado',6,'tel']]],
- ['Dados do trabalho',[['ocupacao','Ocupação',6,'ocup'],['renda','Renda mensal',6,'rs']]],
- ['Sobre o consórcio',[['lance','Vai ofertar um lance?',6,'lance'],['lance_valor','Valor do lance',6,'rs'],['moto','Moto escolhida',6,'moto'],['cor','Cor da moto',6,'cor']]]];
-const ALL=FIELDS.flatMap(s=>s[1].map(f=>f[0])),LBL=Object.fromEntries(FIELDS.flatMap(s=>s[1].map(f=>[f[0],f[1]])));
-const REQ=['nome','nascimento','telefone','cpf','lance','moto'];
-const OPC={ocup:['CLT','Autônomo','Servidor público','Empresário / MEI','Aposentado / Pensionista','Estudante','Outro'],lance:['Sim','Não','Ainda não sei']};
+const FIELDS=[ ['Dados pessoais',[['nome','Nome completo',12],['nascimento','Data de nascimento',4,'dt'],['cpf','CPF',4,'cpf'],['rg','RG (opcional)',4],['rg_emissao','Data de expedição / emissão do documento',6,'dt'],['cidade_nascimento','Naturalidade (cidade e estado)',6],['mae','Nome da mãe',6],['pai','Nome do pai (ou “Não declarado”)',6],['telefone','Telefone',6,'tel'],['email','E-mail',6,'email']]], ['Endereço',[['cep','CEP',4,'cep'],['rua','Rua',6],['numero','Número',2],['bairro','Bairro',6],['cidade','Cidade',4],['estado','Estado (UF)',2],['telefone_recado','Telefone de recado',6,'tel']]], ['Dados do trabalho',[['profissao','Profissão',6],['ocupacao','Vínculo de trabalho',6,'ocup'],['renda','Renda mensal',6,'rs']]], ['Débito automático',[['debito_automatico','Vai pagar em débito automático?',12,'debq'],['conta','Número da conta',4],['agencia','Agência',4],['banco','Banco',4]]], ['Sobre o consórcio',[['lance','Vai ofertar um lance?',6,'lance'],['lance_valor','Valor do lance',6,'rs'],['moto','Moto escolhida',6,'moto'],['cor','Cor da moto',6,'cor']]]]; const ALL=FIELDS.flatMap(s=>s[1].map(f=>f[0])),LBL=Object.fromEntries(FIELDS.flatMap(s=>s[1].map(f=>[f[0],f[1]])));
+const REQ=['nome','nascimento','cpf','cidade_nascimento','mae','pai','telefone','email','cep','rua','numero','bairro','cidade','estado','profissao','renda','lance','moto'];
+const OPC={ocup:['CLT','Autônomo','Servidor público','Empresário / MEI','Aposentado / Pensionista','Estudante','Outro'],lance:['Sim','Não','Ainda não sei'],debq:['Sim','Não']};
 const AC={nome:'name',telefone:'tel',email:'email',cep:'postal-code',rua:'address-line1',cidade:'address-level2',estado:'address-level1'};
 const STL={novo:'Novo',em_analise:'Em análise',contrato_enviado:'Contrato enviado',assinado:'Assinado',recusado:'Recusado'};
 
@@ -243,11 +238,11 @@ async function selMotos(){
   let r=await q('id,nome,modelo,ativo,cores');if(r.error)r=await q('id,nome,modelo,ativo');return r}
 function fld([k,l,w,t]){
   const rq=REQ.includes(k)?' *':'';
-  if(t==='ocup'||t==='lance'||t==='moto'||t==='cor'){
+  if(t==='ocup'||t==='lance'||t==='moto'||t==='cor'||t==='debq'){
     const o=t==='moto'?[['x','Ainda não escolhi'],...M.map(m=>[m.id,m.nome+(m.modelo?' '+m.modelo:'')])]:t==='cor'?[]:OPC[t].map(x=>[x,x]);
-    return `<div class="fl sl s${w}" data-k="${k}"><select id="f_${k}"${t==='cor'?' disabled':''} onchange="this.parentElement.classList.remove('er');lv();${t==='moto'?'corAtualiza();':''}prog()"><option value="">${t==='cor'?'Escolha a moto primeiro':'Selecione'}</option>${o.map(x=>`<option value="${esc(x[0])}">${esc(x[1])}</option>`).join('')}</select><label>${l}${rq}</label></div>`}
+    return `<div class="fl sl s${w}" data-k="${k}"><select id="f_${k}"${t==='cor'?' disabled':''} onchange="this.parentElement.classList.remove('er');lv();${t==='moto'?'corAtualiza();':''}${t==='debq'?'deb();':''}prog()"><option value="">${t==='cor'?'Escolha a moto primeiro':'Selecione'}</option>${o.map(x=>`<option value="${esc(x[0])}">${esc(x[1])}</option>`).join('')}</select><label>${l}${rq}</label></div>`}
   const im={dt:'numeric',tel:'tel',cpf:'numeric',cep:'numeric',rs:'numeric',email:'email'}[t]||'text';
-  return `<div class="fl s${w}${k==='lance_valor'?' hid':''}" data-k="${k}"><input id="f_${k}" placeholder=" " inputmode="${im}" autocomplete="${AC[k]||'off'}" oninput="msk(this,'${t||''}')"><label>${l}${rq}</label></div>`}
+  return `<div class="fl s${w}${(k==='lance_valor'||k==='conta'||k==='agencia'||k==='banco')?' hid':''}" data-k="${k}"><input id="f_${k}" placeholder=" " inputmode="${im}" autocomplete="${AC[k]||'off'}" oninput="msk(this,'${t||''}')"><label>${l}${rq}</label></div>`}
 function ficha(){
   document.title='Pré-contrato CNH | '+V.nome;
   $('#app').innerHTML=`<header class="hero"><span class="glow"></span><div class="spd"><i></i><i></i><i></i><i></i></div>
@@ -266,6 +261,8 @@ function ficha(){
 }
 const BT='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>Enviar';
 const cpl=()=>navigator.clipboard.writeText(location.origin+location.pathname+location.search).then(()=>toast('Link do contrato copiado!'),()=>toast('Não foi possível copiar'));
+function deb(){const on=($('#f_debito_automatico')||{}).value==='Sim';['conta','agencia','banco'].forEach(k=>{const e=document.querySelector('[data-k='+k+']');if(!e)return;e.classList.toggle('show',on);if(!on){const i=$('#f_'+k);if(i)i.value=''}});prog()}
+function dtOk(s,min){const d=String(s||'').replace(/\D/g,'');if(d.length!==8)return false;const dd=+d.slice(0,2),mo=+d.slice(2,4),y=+d.slice(4),t=new Date(y,mo-1,dd);if(t.getMonth()!==mo-1||t.getDate()!==dd||y<1940||t>new Date())return false;if(min){const p=String(min).split('/'),b=new Date(+p[2],+p[1]-1,+p[0]);if(!(t>b))return false}return true}
 function lv(){const h=document.querySelector('[data-k=lance_valor]'),on=$('#f_lance')?.value==='Sim';if(!h)return;h.classList.toggle('show',on);if(!on)$('#f_lance_valor').value=''}
 function prog(){const ks=ALL.map(k=>$('#f_'+k)).filter(x=>x&&x.offsetParent),n=ks.filter(x=>x.value.trim()).length;$('#pg').style.width=(n/ks.length*100)+'%'}
 function msk(e,t){let v=e.value.replace(/\D/g,'');
@@ -280,7 +277,7 @@ async function cep(c){try{const r=await(await fetch('https://viacep.com.br/ws/'+
   [['rua',r.logradouro],['bairro',r.bairro],['cidade',r.localidade],['estado',r.uf]].forEach(([k,v])=>{if(v)$('#f_'+k).value=v});prog();$('#f_numero').focus()}catch(e){}}
 const cpfOk=c=>{c=c.replace(/\D/g,'');if(c.length!==11||/^(\d)\1+$/.test(c))return false;for(let t=9;t<11;t++){let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);if((s*10%11)%10!=c[t])return false}return true};
 function cadRasc(e){const id=e.target&&e.target.id||'';if(id.indexOf('f_')!==0)return;
-  try{const gg=k=>(document.getElementById('f_'+k)||{value:''}).value.trim(),d={};ALL.forEach(k=>{const v=gg(k);if(v)d[k]=v});
+  try{const gg=k=>(document.getElementById('f_'+k)||{value:''}).value.trim(),d={};ALL.forEach(k=>{const v=gg(k);if(v)d[k]=v});if(d.debito_automatico!=='Sim'){delete d.debito_automatico;delete d.conta;delete d.agencia;delete d.banco}
     const mo=M.find(m=>String(m.id)===String(d.moto));delete d.moto;if(mo)d.moto_nome=mo.nome+(mo.modelo?' '+mo.modelo:'');
     rascunho('contrato','form',d)}catch(x){}}
 document.addEventListener('input',cadRasc,true);document.addEventListener('change',cadRasc,true);
@@ -288,13 +285,19 @@ async function send(){
   const g=k=>($('#f_'+k)?.value||'').trim();
   if($('#hp').value)return fim({});
   document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));
-  const chk=[['nome',g('nome').length>=5&&/\s/.test(g('nome')),'Informe o nome completo'],['nascimento',g('nascimento').length===10,'Informe a data de nascimento completa'],
-   ['telefone',g('telefone').replace(/\D/g,'').length>=10,'Telefone inválido'],['cpf',cpfOk(g('cpf')),'CPF inválido'],['email',!g('email')||/^\S+@\S+\.\S+$/.test(g('email')),'E-mail inválido'],
-   ['moto',!!g('moto'),'Escolha a moto'],['cor',!!g('cor'),'Informe a cor da moto'],['lance',!!g('lance'),'Informe se vai ofertar um lance']];
-  const bad=chk.find(c=>!c[1]);
+  const deb=g('debito_automatico')==='Sim',nome2=s=>s.trim().split(/\s+/).length>=2&&s.trim().length>=5,temRg=g('rg').length>0,nasc=g('nascimento').length===10?g('nascimento'):null;
+ const chk=[['nome',g('nome').length>=5&&/\s/.test(g('nome')),'Informe o nome completo'],['nascimento',dtOk(g('nascimento')),'Informe a data de nascimento completa'],['cpf',cpfOk(g('cpf')),'CPF inválido'],
+ ['rg',!temRg||g('rg').replace(/[^0-9A-Za-z]/g,'').length>=5,'RG inválido (deixe em branco se não tiver)'],['rg_emissao',(!temRg&&!g('rg_emissao'))||dtOk(g('rg_emissao'),nasc),'Informe a data de expedição do documento (depois do nascimento, DD/MM/AAAA)'],
+ ['cidade_nascimento',g('cidade_nascimento').length>=3&&!/^\d+$/.test(g('cidade_nascimento')),'Informe a naturalidade (cidade e estado)'],['mae',nome2(g('mae')),'Informe o nome completo da mãe'],['pai',g('pai').length>=3,'Informe o nome do pai (ou escreva: Não declarado)'],
+ ['telefone',g('telefone').replace(/\D/g,'').length>=10,'Telefone inválido'],['email',/^\S+@\S+\.\S+$/.test(g('email')),'Informe um e-mail válido'],
+ ['cep',g('cep').replace(/\D/g,'').length===8,'Informe o CEP'],['rua',g('rua').length>=3,'Informe a rua'],['numero',!!g('numero'),'Informe o número da casa (ou S/N)'],['bairro',g('bairro').length>=2,'Informe o bairro'],['cidade',g('cidade').length>=2,'Informe a cidade'],['estado',g('estado').length>=2,'Informe o estado (UF)'],
+ ['profissao',g('profissao').length>=3&&!/^\d+$/.test(g('profissao')),'Informe a profissão'],['renda',+g('renda').replace(/\D/g,'')>0,'Informe a renda mensal'],
+ ['conta',!deb||g('conta').replace(/\D/g,'').length>=3,'Informe o número da conta'],['agencia',!deb||g('agencia').replace(/\D/g,'').length>=3,'Informe a agência'],['banco',!deb||g('banco').length>=2,'Informe o banco'],
+ ['moto',!!g('moto'),'Escolha a moto'],['cor',!!g('cor'),'Informe a cor da moto'],['lance',!!g('lance'),'Informe se vai ofertar um lance']];
+ const bad=chk.find(c=>!c[1]);
   if(bad){const el=document.querySelector(`[data-k=${bad[0]}]`);el.classList.add('er');el.scrollIntoView({behavior:'smooth',block:'center'});return toast(bad[2])}
   if(!$('#ok').checked)return toast('Aceite a Política de Privacidade para enviar');
-  const row={};ALL.forEach(k=>row[k]=g(k)||null);
+  const row={};ALL.forEach(k=>row[k]=g(k)||null);row.debito_automatico=deb?'Sim':null;if(!deb){row.conta=null;row.agencia=null;row.banco=null}if(!temRg)row.rg_emissao=row.rg_emissao||null;
   const mo=M.find(m=>m.id===g('moto'));delete row.moto;row.moto_id=mo?mo.id:null;row.moto_nome=mo?mo.nome+(mo.modelo?' '+mo.modelo:''):'Ainda não escolhi';
   const b=$('#go');b.disabled=true;b.textContent='Enviando...';
   if(!DEMO){
