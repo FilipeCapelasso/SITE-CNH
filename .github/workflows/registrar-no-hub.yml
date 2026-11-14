@@ -1,0 +1,53 @@
+# Registra TODO push na main deste site no hub Honda (atualiza-o-projeto-Honda):
+#  - espelha os arquivos em apps/site-cnh/ (somente leitura lá)
+#  - acrescenta uma linha em docs/log/site-cnh.md (data, commit, mensagem, arquivos)
+# Precisa do segredo HONDA_SYNC_TOKEN (token com escrita só no repo hub). Sem ele, apenas avisa e sai.
+name: Registrar no hub Honda
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: sync-honda
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  registrar:
+    runs-on: ubuntu-latest
+    env:
+      HUB_TOKEN: ${{ secrets.HONDA_SYNC_TOKEN }}
+    steps:
+      - name: Verificar segredo
+        run: |
+          if [ -z "$HUB_TOKEN" ]; then echo "::notice::HONDA_SYNC_TOKEN não configurado; registro no hub ignorado."; fi
+      - uses: actions/checkout@v4
+        if: ${{ env.HUB_TOKEN != '' }}
+        with:
+          fetch-depth: 2
+      - name: Espelhar e registrar no hub
+        if: ${{ env.HUB_TOKEN != '' }}
+        run: |
+          set -e
+          SHA=$(git rev-parse --short HEAD)
+          MSG=$(git log -1 --format=%s | cut -c1-120)
+          FILES=$(git diff-tree --no-commit-id --name-only -r HEAD | head -8 | tr '\n' ' ')
+          git clone --depth 1 "https://x-access-token:${HUB_TOKEN}@github.com/FilipeCapelasso/atualiza-o-projeto-Honda.git" hub
+          mkdir -p hub/apps/site-cnh hub/docs/log
+          cp index.html vercel.json hub/apps/site-cnh/
+          printf "origem: %s\ncommit: %s\ndata_commit: %s\nespelhado_em: %s\n" "${GITHUB_REPOSITORY}" "$SHA" "$(git log -1 --format=%cI)" "$(date -u +%F)" > hub/apps/site-cnh/.origem
+          LOG=hub/docs/log/site-cnh.md
+          [ -f "$LOG" ] || printf '# Log automático — site-cnh\n\nGerado pela GitHub Action a cada push na main. Mais recente no topo. Não editar à mão.\n\n' > "$LOG"
+          { head -4 "$LOG"; echo "- $(date -u +'%F %H:%MZ') · $SHA · $MSG · arquivos: $FILES"; tail -n +5 "$LOG" | head -199; } > "$LOG.tmp"
+          mv "$LOG.tmp" "$LOG"
+          cd hub
+          git config user.name "sync-honda-bot"
+          git config user.email "sync-honda-bot@users.noreply.github.com"
+          git add -A apps/site-cnh docs/log
+          if git diff --cached --quiet; then echo "Sem mudanças."; exit 0; fi
+          git commit -m "sync(site-cnh): $SHA"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git pull --rebase origin main
+          done
+          echo "::error::Falha ao enviar para o hub"; exit 1
