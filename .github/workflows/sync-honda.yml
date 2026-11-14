@@ -1,0 +1,45 @@
+# Espelha os arquivos deste site em atualiza-o-projeto-Honda/apps/site-cnh (somente leitura lá).
+# Precisa do segredo HONDA_SYNC_TOKEN (token com escrita só no repo hub). Sem ele, apenas avisa e sai.
+name: Espelhar no hub Honda
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'vercel.json'
+  workflow_dispatch:
+concurrency:
+  group: sync-honda
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  espelhar:
+    runs-on: ubuntu-latest
+    env:
+      HUB_TOKEN: ${{ secrets.HONDA_SYNC_TOKEN }}
+    steps:
+      - name: Verificar segredo
+        run: |
+          if [ -z "$HUB_TOKEN" ]; then echo "::notice::HONDA_SYNC_TOKEN não configurado; espelho ignorado."; fi
+      - uses: actions/checkout@v4
+        if: ${{ env.HUB_TOKEN != '' }}
+      - name: Copiar para o hub
+        if: ${{ env.HUB_TOKEN != '' }}
+        run: |
+          set -e
+          git clone --depth 1 "https://x-access-token:${HUB_TOKEN}@github.com/FilipeCapelasso/atualiza-o-projeto-Honda.git" hub
+          mkdir -p hub/apps/site-cnh
+          cp index.html vercel.json hub/apps/site-cnh/
+          printf "origem: %s\ncommit: %s\ndata_commit: %s\nespelhado_em: %s\n" "${GITHUB_REPOSITORY}" "$(git rev-parse --short HEAD)" "$(git log -1 --format=%cI)" "$(date -u +%F)" > hub/apps/site-cnh/.origem
+          cd hub
+          git config user.name "sync-honda-bot"
+          git config user.email "sync-honda-bot@users.noreply.github.com"
+          git add -A apps/site-cnh
+          if git diff --cached --quiet; then echo "Sem mudanças."; exit 0; fi
+          git commit -m "sync(site-cnh): $(cd .. && git rev-parse --short HEAD)"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git pull --rebase origin main
+          done
+          echo "::error::Falha ao enviar para o hub"; exit 1
