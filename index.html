@@ -302,16 +302,20 @@ async function send(){
   const b=$('#go');b.disabled=true;b.textContent='Enviando...';
   if(!DEMO){
     const rr=await segInsert('contratos',{...row,lgpd_aceite:true});const error=rr.ok?null:rr.error;if(!error)rascCompleto('contrato','form');
-    if(error){obxAdd({slug:SLUG,tab:'contratos',row:{...row,lgpd_aceite:true},ts:Date.now(),n:0});try{await segSend('leads',{tipo:'contrato',moto_id:row.moto_id,moto_nome:row.moto_nome,nome:row.nome,telefone:row.telefone,cpf:row.cpf,nascimento:row.nascimento,detalhes:'PRÉ-CONTRATO COMPLETO (falhou ao gravar: '+((error&&error.message)||'erro')+') '+JSON.stringify(row)})}catch(e){}b.disabled=false;b.innerHTML=BT;return toast('Seus dados ficaram guardados e serão reenviados automaticamente. Para agilizar, chame o vendedor no WhatsApp.')}
+    if(error){obxAdd({slug:SLUG,tab:'contratos',row:{...row,lgpd_aceite:true},ts:Date.now(),n:0});try{await segSend('leads',{tipo:'contrato',moto_id:row.moto_id,moto_nome:row.moto_nome,nome:row.nome,telefone:row.telefone,cpf:row.cpf,nascimento:row.nascimento,detalhes:'PRÉ-CONTRATO COMPLETO (falhou ao gravar: '+((error&&error.message)||'erro')+') '+JSON.stringify(row)})}catch(e){}toast('Seus dados ficaram guardados e serão reenviados automaticamente.');return fim(row)}
     try{await segSend('leads',{tipo:'contrato',moto_id:row.moto_id,moto_nome:row.moto_nome,nome:row.nome,telefone:row.telefone,cpf:row.cpf,nascimento:row.nascimento,detalhes:'Pré-contrato CNH enviado pelo site. Lance: '+(row.lance||'-')+(row.lance_valor?' ('+row.lance_valor+')':'')})}catch(e){}
   }
   fim(row);
 }
+const waMsg=(titulo,r)=>{const L=[`Olá! Acabei de preencher ${titulo} pelo site. Seguem meus dados:`];if(r.moto_nome)L.push('Moto: '+r.moto_nome);ALL.forEach(k=>{if(k==='moto')return;const v=r[k];if(v)L.push((LBL[k]||k).replace(/\?$/,'')+': '+v)});return L.join('\n')};
+const waUrl=t=>{const n=String(V.whatsapp||'').replace(/\D/g,'');return n.length>=12?`https://wa.me/${n}?text=${encodeURIComponent(t)}`:''};
+/* ao concluir, leva o cliente ao WhatsApp do vendedor sozinho (sem botão); o botão fica só como reserva */
+const waGo=t=>{const u=waUrl(t);if(!u)return false;setTimeout(()=>{location.href=u},900);return true};
 function fim(r){
   $('#pg').style.width='100%';scrollTo({top:0,behavior:'smooth'});
-  const t=`Olá! Acabei de enviar meu pré-contrato CNH pelo site.\nNome: ${r.nome||''}\nMoto: ${r.moto_nome||''}\nLance: ${r.lance||'-'}${r.lance_valor?' ('+r.lance_valor+')':''}`;
+  const t=waMsg('o pré-contrato de consórcio (CNH)',r),auto=!!(r&&r.nome)&&waGo(t),u=waUrl(t);
   $('#bx').innerHTML=`<div class="done"><svg class="ck" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/><path d="M30 52l14 14 27-30"/></svg><h2>Pré-contrato enviado!</h2>
-  <p>Recebemos seus dados com segurança. O vendedor vai analisar e falar com você pelo WhatsApp.</p><a class="btn wa" target="_blank" rel="noopener" href="${wa(t)}">Avisar no WhatsApp</a><a class="pv" href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a></div>`;
+  <p>${auto?'Recebemos seus dados com segurança. Estamos abrindo o WhatsApp do vendedor com tudo preenchido…':'Recebemos seus dados com segurança. O vendedor vai analisar e falar com você pelo WhatsApp.'}</p>${u?`<a class="btn wa" href="${u}">${auto?'Se não abrir, toque aqui para abrir o WhatsApp':'Avisar no WhatsApp'}</a>`:''}<a class="pv" href="${LGPD_URL}" onclick="return polAbrir(event)" target="_blank" rel="noopener">Política de Privacidade</a></div>`;
 }
 /* ============ PAINEL DO VENDEDOR ============ */
 function login(){
