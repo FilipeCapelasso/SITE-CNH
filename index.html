@@ -173,6 +173,23 @@ function rascunho(origem,key,dados){
 function rascCompleto(origem,key){
   try{const id=rascId(key);if(id&&sb&&sb.rpc){const p={id,origem,completo:true};sb.rpc('registrar_rascunho',{p}).then(r=>{if(r&&r.error)obxAdd({slug:SLUG,rpc:'registrar_rascunho',row:{p},ts:Date.now(),n:0})},()=>{})}}catch(e){}}
 </script>
+<script id="anti-inspecao">
+/* Dificulta o clique direito e os atalhos do inspecionar. E apenas um incomodo para curiosos: nao protege dados
+   (a protecao real esta no banco, com RLS e funcoes que checam quem chama). Campos de texto continuam com o menu
+   normal (colar, copiar) e nada de teclado comum e bloqueado. Para desativar, apague este bloco. */
+(function(){
+  function campo(t){ return !!(t && t.closest && t.closest('input,textarea,select,[contenteditable="true"]')); }
+  document.addEventListener('contextmenu', function(e){ if(!campo(e.target)) e.preventDefault(); }, true);
+  document.addEventListener('keydown', function(e){
+    var k = (e.key || '').toLowerCase(), c = e.ctrlKey || e.metaKey;
+    var bloqueia = e.key === 'F12'
+      || (c && e.shiftKey && (k === 'i' || k === 'j' || k === 'c' || k === 'k'))
+      || (c && !e.shiftKey && k === 'u')
+      || (e.metaKey && e.altKey && (k === 'i' || k === 'j' || k === 'c' || k === 'u'));
+    if(bloqueia){ e.preventDefault(); e.stopPropagation(); }
+  }, true);
+})();
+</script>
 </head>
 <body>
 <div id="pg"></div><div id="app"></div><div id="toast"></div>
